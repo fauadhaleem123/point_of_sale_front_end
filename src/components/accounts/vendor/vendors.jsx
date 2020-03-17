@@ -11,7 +11,7 @@ import Paginate from "../../inventory/pagination";
 const initialPagination = {
   activePage: 1,
   totalPages: 0,
-  per_page: 10
+  per_page: 5
 };
 class Vendors extends Component {
   constructor(props) {
@@ -20,7 +20,7 @@ class Vendors extends Component {
       ...initialPagination,
       allVendors: []
     }
-  }
+  } 
 
   handleClick = (id) => this.props.history.push("accounts/" + id);
 
@@ -38,7 +38,7 @@ class Vendors extends Component {
       .then(res => {
         this.setState({
           allVendors: res.data.results[1],
-          totalPages: res.data.results[0].total
+          totalPages: Math.ceil(res.data.results[0].total/this.state.per_page)
         });
       })
       .catch(error => console.log(error));

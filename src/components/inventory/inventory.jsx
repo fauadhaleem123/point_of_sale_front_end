@@ -9,7 +9,7 @@ import {
   Modal,
   Header,
   Container,
-  Image
+  Image 
 } from "semantic-ui-react";
 import AddItem from "./addItem";
 import http from "../../services/httpService";
@@ -78,15 +78,19 @@ export default class Inventory extends Component {
       .catch(function(error) {});
   };
 
+
   fetchSizes = () => {
-    http
-      .get(apiUrl + "/api/v1/sizes")
-      .then(response => {
+    
+    http.get(apiUrl + "/api/v1/sizes")
+      .then(response => {     
         this.setState({
           sizes: response.data
         });
       })
       .catch(error => console.log(error));
+      
+
+     //this.setState({ sizes: response.data })
   };
 
   searchHandler = e => {
@@ -134,13 +138,13 @@ export default class Inventory extends Component {
       this.filterItems(this.state.categoryID);
     } else {
       http
-        .get(`${apiUrl}/api/v1/items`, { params: { page, per_page } })
+        .get(`${apiUrl}/api/v1/items`, { params: { page, per_page} })
         .then(res => {
           this.setState({
             data: res.data.items,
-            totalPages: res.data.total,
+            totalPages: res.data.pages,
             isLoading: false
-          });
+          }, () => this.reload());
         })
         .catch(error => console.log("Error : ", error));
 
@@ -148,13 +152,17 @@ export default class Inventory extends Component {
     }
   };
 
-  confirmDelete = item => {
-    this.deleteItem(item.id);
+  reload = () => {
+    this.setState({ reload: true })
+  }
+
+  confirmDelete = (item, size) => {
+    this.deleteItem(item.id, size);
   };
 
-  deleteItem = id => {
+  deleteItem = (id, size) => {
     http
-      .delete(`${apiUrl}/api/v1/items/${id}`)
+      .delete(`${apiUrl}/api/v1/items/${id}?size=${size}`)
       .then(res => {
         this.pageHandler();
       })
@@ -173,7 +181,7 @@ export default class Inventory extends Component {
       .get(`${apiUrl}/api/v1/items`, { params: { category_id: cat_id } })
       .then(res => {
         const itemData = res.data[1];
-        const count = res.data[0].total;
+        const count = res.data[0] ? res.data[0].total : 0;
         this.setState({
           data: itemData,
           totalPages: count
@@ -183,6 +191,7 @@ export default class Inventory extends Component {
   };
 
   filterCategory = category => {
+    
     this.setState({
       newCategories: category.children,
       categoryName: category.name
@@ -205,15 +214,41 @@ export default class Inventory extends Component {
   componentDidMount() {
     this.fetchCategoriesData();
     this.fetchSizes();
-    this.state.categoryID = null;
-    this.state.categoryName = "";
     this.setState({
-      activePage: 1
+      activePage: 1,
+      categoryID: null,
+      categoryName: ""
     });
+    this.getFirstPageItems()
 
     const { per_page } = this.state;
     this.handlePagination(1, per_page);
   }
+
+  getFirstPageItems = () => {    
+    http
+      .get(`${apiUrl}/api/v1/items`, { params: { page: 1 } })
+      .then(res => {
+
+        this.setState({ allItems: { items: [...res.data.items], page: res.data.page, totalPages: res.data.pages } }, () => this.getAllItems(2) )
+      })
+      .catch(error => console.log("Error: ", error));
+  }
+
+  getAllItems = async (page) => {
+    
+    let response;
+
+    while ( page <= this.state.allItems.totalPages ) {
+
+      response = await http.get(`${apiUrl}/api/v1/items`, { params: { page } })
+
+      ++page;
+
+      this.setState({ allItems: { items: [ ...this.state.allItems.items , ...response.data.items] } } )
+    }
+  }
+
 
   render() {
     const {
@@ -268,6 +303,8 @@ export default class Inventory extends Component {
                   addItem={this.addItem}
                   data={apiResponse}
                   sizes={sizes}
+                  fetchSizes={this.fetchSizes}
+                  items={this.state.allItems? this.state.allItems.items: null}
                 />
               ) : null}
               {this.props.role === "read_and_write" && (
@@ -321,7 +358,7 @@ export default class Inventory extends Component {
               </Table.Header>
               <Table.Body>
                 {!isLoading ? (
-                  data.map(item =>
+                  data ? (data.map(item =>
                     item.item_sizes_attributes.map(item_size => {
                       return (
                         <Table.Row key={item_size.code}>
@@ -358,7 +395,7 @@ export default class Inventory extends Component {
                                   key: "ok",
                                   content: "Ok",
                                   positive: true,
-                                  onClick: () => this.confirmDelete(item)
+                                  onClick: () => this.confirmDelete(item, item_size.size_attributes.size_id)
                                 }
                               ]}
                               onClose={this.close}
@@ -367,13 +404,17 @@ export default class Inventory extends Component {
                               itemData={item}
                               editItem={this.editItem}
                               data={apiResponse}
+                              sizes={sizes}
+                              fetchSizes={this.fetchSizes}
+                              check={true}
+                              items={this.state.allItems? this.state.allItems.items: null}
                             />
                           </Table.Cell>
                         </Table.Row>
                       );
                     })
                   )
-                ) : (
+                ):null) : (
                   <Loader />
                 )}
               </Table.Body>

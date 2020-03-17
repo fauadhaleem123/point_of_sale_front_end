@@ -39,12 +39,32 @@ class NewReciept extends Component {
     this.getDiscounts();
   };
 
+  getFirstPageItems = () => { 
+    http
+      .get(`${apiUrl}/api/v1/items`, { params: { page: 1 } })
+      .then(res => {
+
+        this.setState({ data:  [...res.data.items], page: res.data.page, totalPages: res.data.pages } , () => this.getAllItems(2) )
+      })
+      .catch(error => console.log("Error: ", error));
+  } 
+
+  getAllItems = async (page) => {
+    
+    let response;
+
+    while ( page <= this.state.totalPages ) {
+
+      response = await http.get(`${apiUrl}/api/v1/items`, { params: { page } })
+
+      ++page;
+
+      this.setState({ data: [ ...this.state.data , ...response.data.items] } )
+    }
+  }
+
   getData = () => {
-    http.get(apiUrl + "/api/v1/items").then(response => {
-      this.setState({
-        data: response.data[1]
-      });
-    });
+    this.getFirstPageItems();
   };
 
   getDrafts = () => {
@@ -103,24 +123,30 @@ class NewReciept extends Component {
   };
 
   populateSelectedItems = () => {
+    
     let quantity = this.state.current_quantity;
     let current_item = this.state.current_item;
     let updated = [...this.state.selected_items];
-
+   
     if (!this.errorCheck()) {
       return null;
     }
-
+    
     const stock = current_item["current_stock"];
 
     let new_quantity = current_item["current_stock"] - quantity;
     current_item["current_stock"] = new_quantity;
     this.setState({ current_item });
-
+    
     let new_data = [...this.state.data];
+
     new_data.forEach(data => {
       if (data.id === current_item["item_id"]) {
-        data.current_stock -= quantity;
+        data.item_sizes_attributes.forEach(item_sizes_attribute => {
+          if (item_sizes_attribute.id === current_item["size_id"]) {
+            item_sizes_attribute.quantity -= quantity
+          }
+        })
       }
     });
 
@@ -128,11 +154,13 @@ class NewReciept extends Component {
 
     updated.forEach(data => {
       if (data.item_id === current_item["item_id"]) {
-        data.quantity += Number(quantity);
-        isSameItem = true;
+        if(data.size_id === current_item["size_id"]){
+          data.quantity += Number(quantity)
+          isSameItem = true;
+        }
       }
     });
-
+    
     let new_count = this.state.item_count;
     if (!isSameItem) {
       new_count++;
@@ -147,11 +175,12 @@ class NewReciept extends Component {
     }
 
     this.setState(
-      { selected_items: updated, item_count: new_count, data: new_data },
-      function() {
-        this.setTotalBill();
-      }
+     { selected_items: updated, item_count: new_count, data: new_data },
+     function() {
+       this.setTotalBill();
+     }
     );
+    
   };
 
   setTotalBill = () => {
@@ -186,12 +215,15 @@ class NewReciept extends Component {
   useDraft = (index) => {
     let invoice = this.state.invoice_drafts[index]
     let count = 0
+
     const invoice_items = invoice.sold_items.map(
-      ({ item_id, item, quantity, discount }) => {
+      ({ item_id, sold_item_size, size_id, item, quantity, unit_price, discount }) => {
         return {
-          value: item.name,
-          label: item.name,
-          unit_price: item.sale_price,
+          value: item.name + " (" + sold_item_size + ") ",
+          label: item.name + " (" + sold_item_size + ") ",
+          size: sold_item_size,
+          size_id: size_id,
+          unit_price: unit_price,
           current_stock: item.current_stock - parseFloat(quantity),
           item_id: item_id,
           item_count: ++count,
@@ -264,7 +296,7 @@ class NewReciept extends Component {
   renderTableData() {
     return this.state.selected_items.map((data, index) => {
       let { item_count, value, unit_price, quantity, discount } = data;
-      if(discount === null){
+      if(discount === null) {
         discount = 0
       }
       return (
@@ -398,11 +430,15 @@ class NewReciept extends Component {
       return null;
     }
 
+
     if(e.target.innerHTML === "Pay Bill"){
+      let new_selected_items = []
+      new_selected_items =  this.deleteUnpermittedProperties(this.state.selected_items);
+
       http
       .post(apiUrl + "/api/v1/invoices", {
         total: this.state.discounted_total,
-        sold_items_attributes: this.state.selected_items,
+        sold_items_attributes: new_selected_items,
         discount_id: this.state.current_discount.id,
         adjustment: this.state.adjustment_amount,
         status: "completed",
@@ -431,10 +467,13 @@ class NewReciept extends Component {
       });
     }
     else if(e.target.innerHTML === "Save as draft") {
+      let new_selected_items = []
+
+      new_selected_items =  this.deleteUnpermittedProperties(this.state.selected_items);
       http
       .post(apiUrl + "/api/v1/invoices", {
         total: this.state.discounted_total,
-        sold_items_attributes: this.state.selected_items,
+        sold_items_attributes: new_selected_items,
         discount_id: this.state.current_discount.id,
         adjustment: this.state.adjustment_amount,
         status: "drafted",
@@ -442,6 +481,7 @@ class NewReciept extends Component {
       })
       .then(response => {
         if (response.status === 201) {
+
           this.setState({ draftCreated: true, invoice_id: response.data.id });
           setTimeout(()=>{ 
             this.setState({ draftCreated: false });
@@ -453,6 +493,25 @@ class NewReciept extends Component {
       
     }
   };
+
+  deleteUnpermittedProperties = selected_items => {
+    let new_selected_items = []
+    new_selected_items = selected_items.map( selected_item => {
+     return {...selected_item}
+    })
+
+    new_selected_items.forEach(selected_item => {
+      delete selected_item.item_count
+      delete selected_item.value
+      selected_item.sold_item_size = selected_item.size;
+      delete selected_item.size
+      delete selected_item.label
+      delete selected_item.current_stock
+      delete selected_item.original_quantity
+    })
+
+    return new_selected_items
+  }
 
   setDiscount = e => {
     let selected_discount = e;
@@ -482,18 +541,26 @@ class NewReciept extends Component {
   }
 
   render() {
-    const itemList = this.state.data.map(
-      ({ name, id, sale_price, current_stock, discount }) => {
-        return {
-          value: name,
-          label: name,
-          discount: discount,
-          unit_price: sale_price,
-          current_stock: current_stock,
-          item_id: id
-        };
-      }
-    );
+    let itemList = [];
+    
+    let x = this.state.data ? this.state.data.forEach (
+      item => (
+        item.item_sizes_attributes.forEach(item_sizes_attribute => {
+          itemList.push({
+            value: item.name + " (" + item_sizes_attribute.size_attributes.size_type + ")",
+            label: item.name + " (" + item_sizes_attribute.size_attributes.size_type + ")",
+            size: item_sizes_attribute.size_attributes.size_type,
+            size_id: item_sizes_attribute.size_attributes.size_id,
+            discount: item_sizes_attribute.discount,
+            unit_price: item_sizes_attribute.price,
+            current_stock: item_sizes_attribute.quantity,
+                
+            item_id: item.id
+          })
+          return null;
+        })
+      )
+    ): null;
 
     return (
       <React.Fragment>
@@ -528,7 +595,7 @@ class NewReciept extends Component {
                     header="Item not selected"
                     content="Please select an item to purchase"
                   />
-                ) : null}
+                  ) : null}
                 <Form.Field
                   control={Input}
                   type="number"

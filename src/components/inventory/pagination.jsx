@@ -17,18 +17,26 @@ class Paginate extends Component {
   };
 
   componentDidMount() {
-    const { per_page } = this.state;
     const { totalPages } = this.props.pageSet;
+    
     this.setState({
-      totalPages: Math.ceil(totalPages / per_page)
+      // totalPages: Math.ceil(totalPages / per_page)
+      totalPages: totalPages
     });
+  }
+
+  componentDidUpdate(prevProps) {
+    if (prevProps.pageSet.totalPages !== this.props.pageSet.totalPages) {
+      const { totalPages } = this.props.pageSet
+      this.setState({ totalPages: totalPages })
+    }
   }
 
   render() {
     this.state.activePage = this.props.pageSet.activePage;
-    this.state.totalPages = Math.ceil(
-      this.props.pageSet.totalPages / this.state.per_page
-    );
+    // this.state.totalPages = Math.ceil(
+    //   this.props.pageSet.totalPages / this.state.per_page
+    // );
     return (
       <Pagination
         boundaryRange={0}

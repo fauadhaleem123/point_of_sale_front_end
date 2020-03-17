@@ -38,19 +38,40 @@ class Filters extends Component {
   handleChange = (e, { name, value }) => this.setState({ [name]: value })
 
   handleStoreInfo = (element) => {
-    this.state.storesList.push({
-      key: element.code,
-      value: element.store_name,
-      text: element.store_name
-    });
+    let bool = true;
+
+    this.state.storesList.forEach( elem => {
+      if (elem.key === element.code){
+        bool = false;
+      }
+    })
+
+    if (bool) {
+      this.state.storesList.push({
+        key: element.code,
+        value: element.store_name,
+        text: element.store_name
+      });
+    }
+    
   }
 
   handleVendorInfo = (element) => {
-    this.state.vendorsList.push({
-      key: element.code,
-      value: element.name,
-      text: element.name
-    });
+    let bool = true;
+
+    this.state.vendorsList.forEach( elem => {
+      if (elem.key === element.code){
+        bool = false;
+      }
+    })
+
+    if (bool){
+      this.state.vendorsList.push({
+        key: element.code,
+        value: element.name,
+        text: element.name
+      });
+    }
   }
 
   componentWillReceiveProps(nextProps) {
@@ -98,6 +119,8 @@ class Filters extends Component {
               dateFormat=" dd MMMM yyyy"
             />
           </Grid.Column>
+          {console.log(this.state.vendorsList, " :this.state.vendorsList")}
+          {console.log(this.state, " :this.state")}
           <Grid.Column>
             Vendor Name
             <Dropdown placeholder='Customers' name="vendor" search selection options={this.state.vendorsList} onChange={this.handleChange} />

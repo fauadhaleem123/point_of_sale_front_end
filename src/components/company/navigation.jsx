@@ -161,7 +161,7 @@ class Navigation extends Component {
                     </SideNav.Nav>
                   </SideNav>
                 }
-                <Container className="marginTop" textAlign="justified" className={this.state.expanded ? "dashboardExpanded" : "dashboardNotExpanded"}>
+                <Container textAlign="justified" className={this.state.expanded ? "marginTop dashboardExpanded" : "marginTop dashboardNotExpanded"}>
                   <Switch>
                     <Route
                       path="/home"

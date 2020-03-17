@@ -28,7 +28,7 @@ class Transections extends Component {
       Vendors: [],
       totalAmount: 0,
     }
-  }
+  } 
 
   handleClick = (id) => this.props.history.push("accounts/" + id);
 
@@ -39,7 +39,7 @@ class Transections extends Component {
     this.handlePagination(activePage, per_page);
   };
 
-  calculateTransactionTotal = () =>{
+  calculateTransactionTotal = () => {
     const {allTransactions} = this.state;
     Array.prototype.forEach.call(allTransactions, element => {
       this.setState(prevstate=>({
@@ -48,7 +48,6 @@ class Transections extends Component {
     });
   }
   
-
   handlePagination = (page, per_page) => {
     this.setState({ activePage: page, per_page: per_page });
     http
@@ -126,6 +125,7 @@ class Transections extends Component {
                 </thead>
                 <tbody>
                   {Transactions.map(item => {
+                    console.log(item.vendor_id?item.vendor.store_name:null, " :vendor")
                     return (
                       <tr key={item.id}>
                         <th scope="row">{item.transaction_code}</th>

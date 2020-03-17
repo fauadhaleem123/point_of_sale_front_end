@@ -36,8 +36,8 @@ class Accounts extends Component {
         <MenuPointing menuItem={this.selectMenu}></MenuPointing>
         {
           this.state.menuItem === "vendors" ? <Vendors></Vendors> :
-            this.state.menuItem === "transactions" ? <Transactions></Transactions>:
-            this.state.menuItem === "customers" ? <Customers></Customers>:null
+          this.state.menuItem === "transactions" ? <Transactions></Transactions>:
+          this.state.menuItem === "customers" ? <Customers></Customers>:null
         }
       </React.Fragment>
     )

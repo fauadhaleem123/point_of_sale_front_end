@@ -4,7 +4,6 @@ import "jspdf-autotable";
 import { apiUrl } from "../../utils/api-config";
 import http from "../../services/httpService";
 import Paginate from "../inventory/pagination";
-import Loader from "../Loader/loader"
 import { Button, Table, Container, Header, Image, Grid, Input } from "semantic-ui-react";
 
 const initialPagination = {
@@ -36,10 +35,26 @@ class StockReport extends Component {
       doc.setFontSize(15);
   
       const title = "Items Stock Report";
-      const headers = [["NAME","CATEGORY", "STOCK", "UNIT PRICE"]];
-      const data = this.state.allItems.map(elt=> [elt.name, elt.category.name, elt.current_stock, elt.sale_price]);
+      const headers = [["NAME","CATEGORY","SIZE", "STOCK", "UNIT PRICE"]];
+      //const data = this.state.allItems.map(elt=> [elt.name, elt.category, elt.current_stock, elt.sale_price]);
 
-  
+      let name, category, itemSize, stock, price;
+      let arr = []
+      this.state.allItems.forEach(elt => {
+        elt.item_sizes_attributes.forEach( item_sizes_attribute => {
+          name = elt.name;
+          category = elt.category;
+          itemSize = item_sizes_attribute.size_attributes.size_type;
+          stock = item_sizes_attribute.quantity;
+          price = item_sizes_attribute.price
+          arr.push([name, category, itemSize, stock, price])
+        })
+      })
+
+      const data = arr;
+
+      console.log(data, " :data")
+      
       let content = {
         startY: 50,
         head: headers,
@@ -54,15 +69,17 @@ class StockReport extends Component {
 
   handlePagination = (page, per_page) => {
     this.setState({activePage: page, per_page:per_page });
-    const {item} = this.state;
+    const { item } = this.state;
 
     http
       .get(`${apiUrl}/api/v1/items`,{params:{page, per_page, item}})
       .then(res => {
+        
+        
         this.setState({
-          itemsData:res.data[1],
-          totalPages: res.data[0].total,
-          isLoading:false
+          itemsData: res.data.items,
+          totalPages: res.data.pages,
+          isLoading: false
         });
       });
       this.setState({ state: this.state });
@@ -71,16 +88,36 @@ class StockReport extends Component {
   getItems = () => {
     http.get(`${apiUrl}/api/v1/items`).then(res => {
       this.setState({
-        allItems: res.data[1]
-      });
+        allItems: res.data.items,
+        totalPages: res.data.pages
+      }, () => this.getAllItems(2));
     });
   };
 
+  getAllItems = async (page) => {
+    
+    let response;
+    console.log()
+
+    while ( page <= this.state.totalPages ) {
+
+      response = await http.get(`${apiUrl}/api/v1/items`, { params: { page } })
+
+      ++page;
+
+      this.setState({ allItems: [ ...this.state.allItems , ...response.data.items], totalPages: response.data.pages  } )
+    }
+  }
+
+  // searchHandler = e => {
+  //   this.setState({ item: e.target.value },()=>{
+  //     const {per_page} = this.state;
+  //     this.handlePagination(1,per_page);
+  //   });
+  // };
+
   searchHandler = e => {
-    this.setState({ item: e.target.value },()=>{
-      const {per_page} = this.state;
-      this.handlePagination(1,per_page);
-    });
+    console.log(e.target.value, " :e.target.value")
   };
 
   componentDidMount() {
@@ -90,7 +127,19 @@ class StockReport extends Component {
   }
 
   render() {
-    const { itemsData, activePage, per_page, totalPages,isLoading } = this.state;
+    const { itemsData, activePage, per_page, totalPages, isLoading } = this.state;
+
+    let tableRows = !isLoading && itemsData ? itemsData.map( item => (
+      item.item_sizes_attributes.map(item_sizes_attribute => (
+        <Table.Row key={item.id + item_sizes_attribute.id}>
+           <Table.Cell>{item.name}</Table.Cell>
+           <Table.Cell>{item.category}</Table.Cell>
+           <Table.Cell>{item_sizes_attribute.size_attributes.size_type}</Table.Cell>
+           <Table.Cell>{item_sizes_attribute.quantity}</Table.Cell>
+           <Table.Cell>{item_sizes_attribute.price}</Table.Cell>
+        </Table.Row>
+      ))
+    ) ) : null
 
     return (
       <div>
@@ -129,21 +178,15 @@ class StockReport extends Component {
           <Table.Header>
             <Table.Row>
               <Table.HeaderCell>Name</Table.HeaderCell>
-              <Table.HeaderCell>category</Table.HeaderCell>
+              <Table.HeaderCell>Category</Table.HeaderCell>
+              <Table.HeaderCell>Size</Table.HeaderCell>
               <Table.HeaderCell>Current Stock</Table.HeaderCell>
               <Table.HeaderCell>Unit Price</Table.HeaderCell>
             </Table.Row>
           </Table.Header>
 
           <Table.Body>
-            {!isLoading? itemsData.map(item => (
-              <Table.Row key={item.id}>
-                <Table.Cell>{item.name}</Table.Cell>
-                <Table.Cell>{item.category.name}</Table.Cell>
-                <Table.Cell>{item.current_stock}</Table.Cell>
-                <Table.Cell>{item.sale_price}</Table.Cell>
-              </Table.Row>
-            )):<Loader/>}
+            {tableRows}
           </Table.Body>
         </Table>
         {totalPages > 0 ? (

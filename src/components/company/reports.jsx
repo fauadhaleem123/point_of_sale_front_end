@@ -68,6 +68,7 @@ class Reports extends Component {
     // this.fetchData();
     this.applyFilter();
   }
+
   fetchData = () => {
     http
       .get(apiUrl + "/api/v1/invoices", { params: this.state.params })
@@ -170,6 +171,7 @@ class Reports extends Component {
           "INVOICE ID",
           "PRODUCT ID",
           "NAME",
+          "Size",
           "QUANTITY",
           "UNIT PRICE",
           "DATE",
@@ -187,6 +189,7 @@ class Reports extends Component {
           elt.invoice_id,
           elt.item_id,
           elt.name,
+          elt.sold_item_size,
           elt.quantity,
           elt.unit_price,
           date,
@@ -216,34 +219,59 @@ class Reports extends Component {
   handleChangeStart = e => {
     this.setState({ startDate: e });
   };
+
   handleChangeEnd = e => {
     this.setState({ endDate: e });
   };
 
   changeFilterOption = (e, { value }) => this.setState({ filterBy: value });
+
   handleByProductFilter = () => {
     const by_product = this.state.by_product;
     this.setState({ by_product: !by_product, by_selected_products: false });
   };
+
   handleBySelectedProducts = () => {
     const by_selected_products = this.state.by_selected_products;
     if (by_selected_products === false) {
       http
         .get(`${apiUrl}/api/v1/items`)
         .then(({ data }) => {
+          console.log(data, " :data")
           const items = [];
-          data[1].forEach(i =>
+          data.items.forEach( i => {
             items.push({ key: i.id, value: i.id, text: i.name })
-          );
-          this.setState({ items });
+            // i.item_sizes_attributes.forEach(item_sizes_attribute => {
+            //   items.push({ key: item_sizes_attribute.id, value: i.id, text: i.name + " (" + item_sizes_attribute.size_attributes.size_type + ")"  })
+            //   console.log(item_sizes_attribute, " :item_sizes_attribute")
+            // })
+          });
+          this.setState({ items, totalPages: data.pages }, ()=> this.getAllItems(2)); 
         })
         .catch(error => console.log(error));
     }
-    this.setState({
-      by_product: false,
-      by_selected_products: !by_selected_products
-    });
+    
   };
+
+  getAllItems = async (page) => {
+    
+    let response;
+    let newItems = []
+    const {by_selected_products} = this.state;
+
+    while ( page <= this.state.totalPages ) {
+
+      response = await http.get(`${apiUrl}/api/v1/items`, { params: { page } })
+
+      response.data.items.forEach( i => {
+        newItems.push( {key: i.id, value: i.id, text: i.name} )
+      })
+
+      ++page;
+    }
+    this.setState({ items: [ ...this.state.items, ...newItems ], by_product: false , by_selected_products: !by_selected_products })
+  }
+
   handleBySelectedProductsFilter = (e, { value }) => {
     this.setState({ seletedItems: value });
   };
@@ -394,6 +422,7 @@ class Reports extends Component {
                   <Table.Row>
                     <Table.HeaderCell>Company</Table.HeaderCell>
                     <Table.HeaderCell>Name</Table.HeaderCell>
+                    <Table.HeaderCell>Size</Table.HeaderCell>
                     <Table.HeaderCell>Date</Table.HeaderCell>
                     <Table.HeaderCell>Time</Table.HeaderCell>
                     <Table.HeaderCell>Quantity</Table.HeaderCell>
@@ -476,6 +505,7 @@ class Reports extends Component {
                       <Table.Row key={p.id}>
                         <Table.Cell>Devsinc</Table.Cell>
                         <Table.Cell>{p.name}</Table.Cell>
+                        <Table.Cell>{p.sold_item_size}</Table.Cell>
                         <Table.Cell>
                           {new Intl.DateTimeFormat("en-PK", dateOptions).format(
                             new Date(p.created_at)
@@ -609,6 +639,7 @@ class Reports extends Component {
                         <Table.Row>
                           <Table.HeaderCell>ID</Table.HeaderCell>
                           <Table.HeaderCell>Name</Table.HeaderCell>
+                          <Table.HeaderCell>Size</Table.HeaderCell>
                           <Table.HeaderCell>Quantity</Table.HeaderCell>
                           <Table.HeaderCell>Sold Price</Table.HeaderCell>
                           <Table.HeaderCell>Total</Table.HeaderCell>
@@ -619,6 +650,7 @@ class Reports extends Component {
                           <Table.Row key={item.id}>
                             <Table.Cell>{item.item_id}</Table.Cell>
                             <Table.Cell>{item.name}</Table.Cell>
+                            <Table.Cell>{item.sold_item_size}</Table.Cell>
                             <Table.Cell>{item.quantity}</Table.Cell>
                             <Table.Cell>{item.unit_price}</Table.Cell>
                             <Table.Cell textAlign="center">

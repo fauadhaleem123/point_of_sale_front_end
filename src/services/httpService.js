@@ -38,3 +38,4 @@ export default {
   put: axios.put,
   delete: axios.delete
 };
+  
