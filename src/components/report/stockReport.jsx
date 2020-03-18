@@ -4,7 +4,7 @@ import "jspdf-autotable";
 import { apiUrl } from "../../utils/api-config";
 import http from "../../services/httpService";
 import Paginate from "../inventory/pagination";
-import { Button, Table, Container, Header, Image, Grid, Input } from "semantic-ui-react";
+import { Button, Table, Container, Header, Image, Grid, Input, Search } from "semantic-ui-react";
 
 const initialPagination = {
   activePage: 1,
@@ -20,7 +20,12 @@ class StockReport extends Component {
       isLoading: true,
       itemsData: [],
       allItems: [],
-      item: ""
+      item: "",
+      search: {
+        isSearchLoading: false,
+        results: [],
+        value: ""
+      }
     };
   }
   
@@ -117,7 +122,15 @@ class StockReport extends Component {
   // };
 
   searchHandler = e => {
-    console.log(e.target.value, " :e.target.value")
+    let search = e.target.value
+    let allItems = this.state.allItems.filter( singleItem => {
+      let item = singleItem.name.toLowerCase();
+      return item.indexOf(
+        search.toLowerCase()) !== -1   
+    })
+
+    this.setState({ itemsData: allItems })
+
   };
 
   componentDidMount() {
@@ -128,6 +141,7 @@ class StockReport extends Component {
 
   render() {
     const { itemsData, activePage, per_page, totalPages, isLoading } = this.state;
+    // const { isSearchLoading, value, results } = this.state.search;
 
     let tableRows = !isLoading && itemsData ? itemsData.map( item => (
       item.item_sizes_attributes.map(item_sizes_attribute => (
@@ -156,11 +170,21 @@ class StockReport extends Component {
         <Grid columns={3}>
           <Grid.Row>
             <Grid.Column>
-                <Input
+                {/* <Input
                   icon="search"
                   placeholder="Search Items"
                   onChange={this.searchHandler}
-                />
+                /> */}
+              {/* <Search
+                loading={isLoading}
+                onResultSelect={this.handleResultSelect}
+                onSearchChange={_.debounce(this.handleSearchChange, 500, {
+                  leading: true,
+                })}
+                results={results}
+                value={value}
+                {...this.props}
+              /> */}
             </Grid.Column>
             <Grid.Column floated="right">
               <Button
