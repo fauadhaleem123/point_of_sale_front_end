@@ -1,5 +1,5 @@
 import React, { Component } from "react";
-import {Icon, Table, Header, Button } from "semantic-ui-react";
+import {Icon, Table, Header  } from "semantic-ui-react";
 
 
 export default class categorySideBar extends Component {
@@ -11,13 +11,15 @@ export default class categorySideBar extends Component {
       children: false
     };
   } 
-
+l
   itemClicked = item => (event) => {
     if (item.children.length > 0) {
       this.generateChildern(item)
     }
-  }
 
+    this.props.filterCategory(item.name, item.id)
+  }
+ 
   generateChildern = (item) => {
     let arr = [];
     let name = "";
@@ -71,8 +73,7 @@ export default class categorySideBar extends Component {
 
     if (data.length > 0) { 
     
-      data.forEach((item)=>{
-      
+      data.forEach((item) => {
         arr.push(
           <Table.Row key={item.id} onClick={this.itemClicked(item)} style={{cursor:'pointer'}}>
             <Table.Cell>
@@ -83,7 +84,6 @@ export default class categorySideBar extends Component {
           </Table.Row>
         ) 
       }) 
-
     }
     return arr;
   }
@@ -102,25 +102,15 @@ export default class categorySideBar extends Component {
 
     return (
       <div style={data.length>0?{ marginTop:"6%"}:{ marginTop:"20%"}}>
-          {/* {data.length > 0 ?
-          <div>
-            <Button primary floated='left' onClick={this.gotoHome}>
-              <Icon name='left chevron' />
-              Home
-            </Button>
-          </div>
-          :null
-          } */}
-          <Table celled padded >
-            <Table.Header>
-              <Table.Row>
-                <Table.HeaderCell>Categories</Table.HeaderCell>
-              </Table.Row>
-            </Table.Header>
-            <Table.Body>{ this.state.children ? this.state.renderData : this.generateCategoryList(data) }</Table.Body>
+        <Table celled padded >
+          <Table.Header>
+            <Table.Row>
+              <Table.HeaderCell onClick={this.props.headerClicked}>All Categories</Table.HeaderCell>
+            </Table.Row>
+          </Table.Header>
+          <Table.Body>{ this.state.children ? this.state.renderData : this.generateCategoryList(data) }</Table.Body>
         </Table>
       </div>
-
     )
   }
 }

@@ -38,7 +38,7 @@ export default class SearchSize extends Component {
  
   render() {
     const { isLoading, value, results } = this.state;
-    console.log(results, " :results")
+
     return (
       <Search
         loading={isLoading}

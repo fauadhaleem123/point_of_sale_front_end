@@ -308,7 +308,7 @@ export default class AddItem extends Component {
       }, 5000);
     }
   };
-
+ 
   updateCategoryOptions = (value, beforeEdit, beforeAdd) => {
     
     var matchingObj;

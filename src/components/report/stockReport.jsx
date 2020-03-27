@@ -4,13 +4,16 @@ import "jspdf-autotable";
 import { apiUrl } from "../../utils/api-config";
 import http from "../../services/httpService";
 import Paginate from "../inventory/pagination";
-import { Button, Table, Container, Header, Image, Grid, Input, Search } from "semantic-ui-react";
+import { Button, Table, Container, Header, Image, Grid,  Search } from "semantic-ui-react";
+import _ from "lodash"
 
 const initialPagination = {
   activePage: 1,
   totalPages: 0,
   per_page: 6
 };
+
+const initialState = { isSearchLoading: false, results: [], value: '' }
 
 class StockReport extends Component {
   constructor(props) {
@@ -25,9 +28,12 @@ class StockReport extends Component {
         isSearchLoading: false,
         results: [],
         value: ""
-      }
+      },
+      currentItems: [],
+      turnOffPagination: false
     };
   }
+
   
   exportPDF = () => {
       const unit = "pt";
@@ -57,8 +63,6 @@ class StockReport extends Component {
       })
 
       const data = arr;
-
-      console.log(data, " :data")
       
       let content = {
         startY: 50,
@@ -102,7 +106,6 @@ class StockReport extends Component {
   getAllItems = async (page) => {
     
     let response;
-    console.log()
 
     while ( page <= this.state.totalPages ) {
 
@@ -110,16 +113,16 @@ class StockReport extends Component {
 
       ++page;
 
-      this.setState({ allItems: [ ...this.state.allItems , ...response.data.items], totalPages: response.data.pages  } )
+      this.setState({ allItems: [ ...this.state.allItems , ...response.data.items], totalPages: response.data.pages  }, () => this.mapItemsToItemName() )
     }
   }
 
-  // searchHandler = e => {
-  //   this.setState({ item: e.target.value },()=>{
-  //     const {per_page} = this.state;
-  //     this.handlePagination(1,per_page);
-  //   });
-  // };
+  mapItemsToItemName = () => {
+    let itemsName = this.state.allItems.map( item => {
+      return {title:  item.name}
+    })
+    this.setState({itemsName})
+  }
 
   searchHandler = e => {
     let search = e.target.value
@@ -139,9 +142,36 @@ class StockReport extends Component {
     this.getItems();
   }
 
+  handleResultSelect = (e, { result }) => { 
+    this.setState({ value: result.title })
+    let selectedItems = this.state.allItems.filter( item => item.name === result.title )
+   this.setState({ currentItems: [...this.state.itemsData] , itemsData: selectedItems, turnOffPagination: true  })
+  }
+
+  handleSearchChange = (e, { value }) => {
+   
+    const { itemsName } = this.state
+    this.setState({  search: {  ...this.state.search,  value: value, isSearchLoading: true} })
+
+    setTimeout(() => {
+      if (this.state.search.value.length < 1) return this.setState({ search: initialState, turnOffPagination: false }, () => this.handlePagination(1, this.state.per_page))
+
+      const re = new RegExp(_.escapeRegExp(this.state.search.value), 'i')
+      const isMatch = (result) => re.test(result.title)
+
+      this.setState({
+        search : {
+          ...this.state.search,
+          isSearchLoading: false,
+          results:  _.filter(itemsName, isMatch)
+        }
+      })
+    }, 300)
+  }
+
   render() {
     const { itemsData, activePage, per_page, totalPages, isLoading } = this.state;
-    // const { isSearchLoading, value, results } = this.state.search;
+    const { isSearchLoading, value, results } = this.state.search;
 
     let tableRows = !isLoading && itemsData ? itemsData.map( item => (
       item.item_sizes_attributes.map(item_sizes_attribute => (
@@ -170,13 +200,8 @@ class StockReport extends Component {
         <Grid columns={3}>
           <Grid.Row>
             <Grid.Column>
-                {/* <Input
-                  icon="search"
-                  placeholder="Search Items"
-                  onChange={this.searchHandler}
-                /> */}
-              {/* <Search
-                loading={isLoading}
+              <Search
+                loading={isSearchLoading}
                 onResultSelect={this.handleResultSelect}
                 onSearchChange={_.debounce(this.handleSearchChange, 500, {
                   leading: true,
@@ -184,16 +209,16 @@ class StockReport extends Component {
                 results={results}
                 value={value}
                 {...this.props}
-              /> */}
+              />
             </Grid.Column>
             <Grid.Column floated="right">
               <Button
-              icon="download"
-              content="Download"
-              color="green"
-              onClick={() => this.exportPDF()}
-              style={{float:"right"}}
-            />
+                icon="download"
+                content="Download"
+                color="green"
+                onClick={() => this.exportPDF()}
+                style={{float:"right"}}
+              />
             </Grid.Column>
           </Grid.Row>
 
@@ -213,12 +238,12 @@ class StockReport extends Component {
             {tableRows}
           </Table.Body>
         </Table>
-        {totalPages > 0 ? (
+        {totalPages > 0 && !this.state.turnOffPagination? (
           <Paginate
             handlePagination={this.handlePagination}
             pageSet={{ activePage, totalPages, per_page }}
           />
-        ) : <h1 className="items-record">No Record Found</h1>}
+        ) : totalPages <= 0 ? <h1 className="items-record">No Record Found</h1> : null}
       </div>
     );
   }

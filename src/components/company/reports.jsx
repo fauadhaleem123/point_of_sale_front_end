@@ -138,9 +138,11 @@ class Reports extends Component {
     doc.setFontSize(15);
 
     if (this.state.printData.invoices) {
+
       title = "Sales Report By Date";
       headers = [["INVOICE ID", "INVOICE TOTAL", "DATE", "TIME"]];
       this.state.printData.invoices.forEach(elt => {
+
         const date = new Intl.DateTimeFormat("en-PK", dateOptions).format(
           new Date(elt.created_at)
         );
@@ -237,14 +239,9 @@ class Reports extends Component {
       http
         .get(`${apiUrl}/api/v1/items`)
         .then(({ data }) => {
-          console.log(data, " :data")
           const items = [];
           data.items.forEach( i => {
             items.push({ key: i.id, value: i.id, text: i.name })
-            // i.item_sizes_attributes.forEach(item_sizes_attribute => {
-            //   items.push({ key: item_sizes_attribute.id, value: i.id, text: i.name + " (" + item_sizes_attribute.size_attributes.size_type + ")"  })
-            //   console.log(item_sizes_attribute, " :item_sizes_attribute")
-            // })
           });
           this.setState({ items, totalPages: data.pages }, ()=> this.getAllItems(2)); 
         })

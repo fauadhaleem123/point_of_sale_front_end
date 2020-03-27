@@ -2,15 +2,15 @@ import _ from "lodash";
 import React, { Component } from "react";
 import {
   Table,
-  Input,
   Form,
   Button,
   Grid,
   Modal,
   Header,
   Container,
-  Image 
-} from "semantic-ui-react";
+  Image,
+  Search 
+} from "semantic-ui-react"; 
 import AddItem from "./addItem";
 import http from "../../services/httpService";
 import { apiUrl } from "../../utils/api-config";
@@ -23,8 +23,10 @@ import Loader from "../Loader/loader";
 const initialPagination = {
   activePage: 1,
   totalPages: 0,
-  per_page: 6
+  per_page: 2
 };
+
+const initialState = { isSearchLoading: false, results: [], value: '' }
 
 export default class Inventory extends Component {
   state = {
@@ -39,7 +41,14 @@ export default class Inventory extends Component {
     data: [],
     isLoading: true,
     apiResponse: [],
-    newCategories: []
+    newCategories: [],
+    turnOffPagination: false,
+    paginationByCategory: false,
+    search: {
+      isSearchLoading: false,
+      results: [],
+      value: ""
+    },
   };
 
   close = () => {
@@ -89,8 +98,6 @@ export default class Inventory extends Component {
       })
       .catch(error => console.log(error));
       
-
-     //this.setState({ sizes: response.data })
   };
 
   searchHandler = e => {
@@ -132,24 +139,30 @@ export default class Inventory extends Component {
   };
 
   handlePagination = (page, per_page) => {
-    this.setState({ activePage: page, per_page: per_page });
+    if (this.state.paginationByCategory) {
+      this.setPaginationAfterFilteringByCategory(null, page)
+    }
+    else {
+      this.setState({ activePage: page, per_page: per_page });
 
-    if (this.state.categoryID) {
-      this.filterItems(this.state.categoryID);
-    } else {
-      http
-        .get(`${apiUrl}/api/v1/items`, { params: { page, per_page} })
-        .then(res => {
-          this.setState({
-            data: res.data.items,
-            totalPages: res.data.pages,
-            isLoading: false
-          }, () => this.reload());
-        })
-        .catch(error => console.log("Error : ", error));
+      if (this.state.categoryID) {
+        this.filterItems(this.state.categoryID);
+      } else {
+        http
+          .get(`${apiUrl}/api/v1/items`, { params: { page, per_page} })
+          .then(res => {
+            this.setState({
+              data: res.data.items,
+              totalPages: res.data.pages,
+              isLoading: false
+            }, () => this.reload());
+          })
+          .catch(error => console.log("Error : ", error));
 
       this.setState({ state: this.state });
     }
+    }
+    
   };
 
   reload = () => {
@@ -169,7 +182,82 @@ export default class Inventory extends Component {
       .catch(error => console.log("Error: ", error));
 
     this.close();
-  };
+  }
+
+  filterByCategory =  (cat_name, cat_id, page) => {
+    this.setState({
+      categoryName: cat_name,
+      categoryID: cat_id
+    });
+    
+    let categories = []
+
+    this.state.apiResponse.forEach( category => {
+
+      if (cat_id === category.id) {
+        categories.push(category.name)
+        
+        if (category.children.length > 0 ) {
+          category.children.forEach( child => {
+            categories.push(child.name)
+          })
+        }
+      }
+
+      if (category.children.length > 0 ) {
+        category.children.forEach( child => {
+          if (cat_id === child.id) {
+            categories.push(child.name)
+          }
+        })
+      }
+    })
+
+     
+    let itemsData = []
+    console.log(this.state.allItems, " :this.state.allItems")
+    console.log(this.state, " :this.state")
+
+    this.state.allItems.items.forEach( item => {
+      categories.forEach( category => {
+        if (item.category === category) {
+          itemsData.push(item)
+        }
+      })
+    })
+
+    let currentPage = page ? page : 1
+    this.setState({
+      filteredCategoryItems: itemsData
+    })
+
+    this.setPaginationAfterFilteringByCategory(itemsData, currentPage)
+  }
+
+  setPaginationAfterFilteringByCategory = (items, page) => {
+    this.setState({ activePage: page })
+    if (!items) {
+      items = this.state.filteredCategoryItems
+    }
+    let start = (page - 1) * this.state.per_page;
+    let end = start + (this.state.per_page - 1)
+
+    let filteredItems = items.filter( (item, i) => {
+      if (i >= start && i <= end) return true;
+    })
+
+    this.setState({
+      data: filteredItems,
+      totalPages: Math.ceil(items.length/this.state.per_page),
+      isLoading: false,
+      paginationByCategory: true
+    }, () => this.reload())
+
+  }
+
+  allCategoriesClicked = () => {
+    this.setState({ paginationByCategory: false }, () => this.handlePagination(1, this.state.per_page))
+  }
 
   filterItems = (cat_name, cat_id) => {
     this.setState({
@@ -180,8 +268,8 @@ export default class Inventory extends Component {
     http
       .get(`${apiUrl}/api/v1/items`, { params: { category_id: cat_id } })
       .then(res => {
-        const itemData = res.data[1];
-        const count = res.data[0] ? res.data[0].total : 0;
+        const itemData = res.data.items;
+        const count = res.data.pages;
         this.setState({
           data: itemData,
           totalPages: count
@@ -202,6 +290,7 @@ export default class Inventory extends Component {
     this.pageHandler();
   };
   addItem = () => {
+    this.getFirstPageItems();
     this.pageHandler();
   };
 
@@ -239,15 +328,55 @@ export default class Inventory extends Component {
     
     let response;
 
-    while ( page <= this.state.allItems.totalPages ) {
+    let allPages = this.state.allItems.totalPages
+
+    while ( page < allPages ) {
 
       response = await http.get(`${apiUrl}/api/v1/items`, { params: { page } })
-
-      ++page;
-
+    
+      page = page+1;
       this.setState({ allItems: { items: [ ...this.state.allItems.items , ...response.data.items] } } )
     }
+    response = await http.get(`${apiUrl}/api/v1/items`, { params: { page } })
+    this.setState({ allItems: { items: [ ...this.state.allItems.items , ...response.data.items] } }, () => this.mapItemsToItemName() )
   }
+
+  mapItemsToItemName = () => {
+    
+    let itemsName = this.state.allItems.items.map( item => {
+      return {title:  item.name}
+    })
+    this.setState({itemsName})
+  }
+
+  handleResultSelect = (e, { result }) => {
+    this.setState({ value: result.title })
+    let selectedItems = this.state.allItems.items.filter( item => item.name === result.title )
+   this.setState({ currentItems: [...this.state.data] , data: selectedItems, turnOffPagination: true  })
+  }
+
+  handleSearchChange = (e, { value }) => {
+
+    const { itemsName } = this.state
+    this.setState({  search: {  ...this.state.search,  value: value, isSearchLoading: true} })
+
+    setTimeout(() => {
+      if (this.state.search.value.length < 1 && this.state.currentItems ) return this.setState({ search: initialState, turnOffPagination: false, data: [...this.state.currentItems] })
+      else if (this.state.search.value.length < 1) return this.setState({ search: initialState, turnOffPagination: false })
+
+      const re = new RegExp(_.escapeRegExp(this.state.search.value), 'i')
+      const isMatch = (result) => re.test(result.title)
+
+      this.setState({
+        search : {
+          ...this.state.search,
+          isSearchLoading: false,
+          results:  _.filter(itemsName, isMatch)
+        }
+      })
+    }, 300)
+  }
+
 
 
   render() {
@@ -261,9 +390,9 @@ export default class Inventory extends Component {
       totalPages,
       per_page,
       newCategories,
-      categoryName,
       sizes
     } = this.state;
+    const { isSearchLoading, value, results } = this.state.search;
 
     return (
       <div>
@@ -282,20 +411,23 @@ export default class Inventory extends Component {
             <CategorySideBar
               gotoHome={this.gotoHome}
               filterItems={this.filterItems}
-              filterCategory={this.filterCategory}
+              filterCategory={this.filterByCategory}
               data={newCategories}
+              headerClicked={this.allCategoriesClicked}
             />
           </Grid.Column>
           <Grid.Column width={12}>
             <Form>
-              <Input
-                icon="search"
-                placeholder={
-                  categoryName
-                    ? "search items in " + categoryName
-                    : "search items"
-                }
-                onChange={this.searchHandler}
+              <Search
+                loading={isSearchLoading}
+                placeholder="Search Items"
+                onResultSelect={this.handleResultSelect}
+                onSearchChange={_.debounce(this.handleSearchChange, 500, {
+                  leading: true,
+                })}
+                results={results}
+                value={value}
+                {...this.props}
               />
               {apiResponse.length > 0 &&
               this.props.role === "read_and_write" ? (
@@ -419,13 +551,13 @@ export default class Inventory extends Component {
                 )}
               </Table.Body>
             </Table>
-            {totalPages > 0 ? (
+            {totalPages > 0 && !this.state.turnOffPagination ? (
               <Paginate
                 handlePagination={this.handlePagination}
                 pageSet={{ activePage, totalPages, per_page, data }}
               />
             ) : (
-              <h1 className="items-record">No Record Found</h1>
+              totalPages <= 0 ? <h1 className="items-record">No Record Found</h1> : null
             )}
           </Grid.Column>
         </Grid>

@@ -73,6 +73,7 @@ export default class AddCategory extends Component {
   };
 
   updateCategoryOptions = value => {
+
     var matchingObj;
     var objCategory;
     var index = 0 ;
@@ -84,9 +85,10 @@ export default class AddCategory extends Component {
             index = i;
          }
     });
-  
+    
+
     if (objCategory) {
-      for(let i=0;i<dropDownList.length; i++){
+      for(let i = 0; i < dropDownList.length; i++) {
           if(i>index){
             dropDownList[i]=null;
           }
@@ -99,7 +101,7 @@ export default class AddCategory extends Component {
       this.setState({
         categoryObjID: objCategory.id
       });
-      this.createOptions(categoryList);
+      //this.createOptions(categoryList);
     }
   };
 
@@ -175,7 +177,7 @@ export default class AddCategory extends Component {
                 </Message>
             :null}
           </Form>
-
+ 
           <Modal.Actions>
             <Button color="black" onClick={this.close}>
               Cancel

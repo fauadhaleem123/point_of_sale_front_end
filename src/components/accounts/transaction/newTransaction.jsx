@@ -230,7 +230,7 @@ class NewTransaction extends Component {
   }
 
   makeNewTransaction = () => {
-    debugger;
+    // debugger;
     const { amount, details, code, startDate, vendorID, account, customerID,transaction_type } = this.state;
     http
       .post(`${apiUrl}/api/v1/transactions`, {

@@ -27,7 +27,7 @@ class Filters extends Component {
     this.props.filterTransactions({ vendor, store, startDate, endDate });
   }
 
-  handleChangeStart = e => {
+  handleChangeStart = e => { 
     this.setState({ startDate: e });
   };
 
@@ -52,8 +52,7 @@ class Filters extends Component {
         value: element.store_name,
         text: element.store_name
       });
-    }
-    
+    }  
   }
 
   handleVendorInfo = (element) => {
@@ -65,13 +64,13 @@ class Filters extends Component {
       }
     })
 
-    if (bool){
+    if (bool) {
       this.state.vendorsList.push({
         key: element.code,
         value: element.name,
         text: element.name
       });
-    }
+    } 
   }
 
   componentWillReceiveProps(nextProps) {
@@ -90,7 +89,7 @@ class Filters extends Component {
     } = this.state;
 
     return (
-      <Grid columns={5} centered>
+      <Grid columns={5} centered >
         <Grid.Row>
           <Grid.Column>
             Date From
@@ -119,15 +118,13 @@ class Filters extends Component {
               dateFormat=" dd MMMM yyyy"
             />
           </Grid.Column>
-          {console.log(this.state.vendorsList, " :this.state.vendorsList")}
-          {console.log(this.state, " :this.state")}
           <Grid.Column>
-            Vendor Name
-            <Dropdown placeholder='Customers' name="vendor" search selection options={this.state.vendorsList} onChange={this.handleChange} />
+            User Name
+            <Dropdown clearable placeholder='Users' name="vendor" search selection options={this.state.vendorsList} onChange={this.handleChange} />
           </Grid.Column>
           <Grid.Column>
             Store Name
-            <Dropdown placeholder='Stores' name="store" search selection options={this.state.storesList} onChange={this.handleChange} />
+            <Dropdown clearable placeholder='Stores' name="store" search selection options={this.state.storesList} onChange={this.handleChange} />
           </Grid.Column>
           <GridColumn>
             <Button className="search-btn" onClick={this.applyFilter}><Icon name='refresh' /> SEARCH </Button>

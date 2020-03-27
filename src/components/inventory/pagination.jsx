@@ -19,10 +19,7 @@ class Paginate extends Component {
   componentDidMount() {
     const { totalPages } = this.props.pageSet;
     
-    this.setState({
-      // totalPages: Math.ceil(totalPages / per_page)
-      totalPages: totalPages
-    });
+    this.setState({ totalPages: totalPages });
   }
 
   componentDidUpdate(prevProps) {
@@ -34,14 +31,11 @@ class Paginate extends Component {
 
   render() {
     this.state.activePage = this.props.pageSet.activePage;
-    // this.state.totalPages = Math.ceil(
-    //   this.props.pageSet.totalPages / this.state.per_page
-    // );
     return (
       <Pagination
         boundaryRange={0}
         activePage={this.state.activePage}
-        siblingRange={3}
+        siblingRange={2}
         disabled={this.state.totalPages < 2 ? true : false}
         firstItem={{ content: <Icon name="angle double left" />, icon: true }}
         lastItem={{ content: <Icon name="angle double right" />, icon: true }}

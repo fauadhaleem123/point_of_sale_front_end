@@ -4,6 +4,20 @@ import Select from "react-select";
 import http from "../../services/httpService";
 import { Input, Form, Button, Grid, Message, Container, Image, Header, Table, Icon } from "semantic-ui-react";
 import { apiUrl } from "../../utils/api-config";
+import jsPDF from "jspdf";
+import "jspdf-autotable";
+import "react-datepicker/dist/react-datepicker.css";
+
+const dateOptions = {
+  year: "numeric",
+  month: "long",
+  day: "numeric"
+};
+const timeOptions = {
+  hour: "numeric",
+  minute: "numeric",
+  second: "numeric"
+};
 
 class NewReciept extends Component {
   constructor(props) {
@@ -173,7 +187,7 @@ class NewReciept extends Component {
       };
       updated.push(current_item);
     }
-
+    
     this.setState(
      { selected_items: updated, item_count: new_count, data: new_data },
      function() {
@@ -434,6 +448,7 @@ class NewReciept extends Component {
     if(e.target.innerHTML === "Pay Bill"){
       let new_selected_items = []
       new_selected_items =  this.deleteUnpermittedProperties(this.state.selected_items);
+      
 
       http
       .post(apiUrl + "/api/v1/invoices", {
@@ -446,7 +461,7 @@ class NewReciept extends Component {
       })
       .then(response => {
         if (response.status === 201) {
-          this.setState({ invoiceCreated: true, invoice_id: response.data.id });
+          this.setState({ invoiceCreated: true, invoice_id: response.data.id }, () => this.printInvoice(this.state.invoice_id));
           setTimeout(()=>{ 
             this.setState({ invoiceCreated: false });
           }, 5000);
@@ -493,6 +508,53 @@ class NewReciept extends Component {
       
     }
   };
+
+  printInvoice = (invoice) => {
+    const unit = "pt";
+    const size = "A4"; // Use A1, A2, A3 or A4
+    const orientation = "portrait"; // portrait or landscape
+    let title = "";
+    let headers = "";
+    let salesContent = [];
+    const marginLeft = 40;
+    const doc = new jsPDF(orientation, unit, size);
+    doc.setFontSize(15);
+
+    console.log(this.state, " :this.state.selectedItems")
+    console.log(invoice, " :invoice")
+
+    const date = new Intl.DateTimeFormat("en-PK", dateOptions).format(
+      new Date()
+    );
+    const time = new Intl.DateTimeFormat("en-PK", timeOptions).format(
+      new Date()
+    );
+      title = "Invoice Id: " + invoice + "       " + "       " + " " +  " Date: " + date + "       " + "       " + " " + " Time: " + time;
+      headers = [["Item No.", "Name", "Sale Price", "Quantity", " Discount", "Total"]];
+      let totalBill = 0;
+      this.state.selected_items.forEach(elt => {
+        let totalItemBill = (elt.quantity * elt.unit_price) - ((elt.quantity * elt.unit_price) * (elt.discount/100))
+        totalBill = totalBill + totalItemBill
+       
+        salesContent.push([elt.item_count, elt.label, elt.unit_price, elt.quantity, elt.discount, totalItemBill]);
+      });
+
+      salesContent.push(["","","","", "Total Bill: ", totalBill])
+      salesContent.push(["","","","", "Adjusted Amount: ", this.state.adjustment_amount])
+      let adjustedPrice = totalBill + parseFloat(this.state.adjustment_amount)
+
+      salesContent.push(["","","","", "Final Amount: ", adjustedPrice])
+
+      let content = {
+        startY: 50,
+        head: headers,
+        body: salesContent
+      };
+
+      doc.text(title, marginLeft, 40);
+      doc.autoTable(content);
+      doc.save("invoice.pdf");
+  }
 
   deleteUnpermittedProperties = selected_items => {
     let new_selected_items = []

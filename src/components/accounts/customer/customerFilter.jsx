@@ -18,7 +18,7 @@ class CustomerFilter extends Component {
     }
   }
 
-  applyFilter = () => {
+  applyFilter = () => { 
     const { customer, mobile } = this.state;
     this.props.filterCustomers({ customer, mobile });
   }
@@ -26,11 +26,23 @@ class CustomerFilter extends Component {
   handleChange = (e, { name, value }) => this.setState({ [name]: value })
 
   handleCustomerInfo = (element) => {
-    this.state.customersList.push({
-      key: element.code,
-      value: element.name,
-      text: element.name
-    });
+    let bool = true;
+
+    this.state.customersList.forEach( elem => {
+      if (elem.key === element.code){
+        bool = false;
+      }
+    })
+
+    if (bool) {
+      this.state.customersList.push({
+        key: element.code,
+        value: element.name,
+        text: element.name
+      });
+    }
+
+    
   }
 
   componentWillReceiveProps(nextProps) {

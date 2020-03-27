@@ -13,11 +13,7 @@ class Accounts extends Component {
   }
 
   selectMenu = (item) => {
-    this.setState(
-      {
-        menuItem: item
-      }
-    );
+    this.setState({  menuItem: item });
   }
   
   render() {
