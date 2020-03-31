@@ -49,12 +49,10 @@
     "styled-components": "^4.3.2"
   },
   "scripts": {
-    "dev": "react-scripts --max_old_space_size=4096 start",
-    "start": "serve -s --max_old_space_size=4096 build",
-    "build": "react-scripts --max_old_space_size=4096 build",
+    "start": "react-scripts start",
+    "build": "react-scripts build",
     "test": "react-scripts test",
-    "eject": "react-scripts eject",
-    "heroku-postbuild": "npm run build"
+    "eject": "react-scripts eject"
   },
   "eslintConfig": {
     "extends": "react-app"
