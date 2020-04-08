@@ -20,7 +20,7 @@ class SignUp extends Component {
     this.setState({ [e.target.name]: e.target.value });
   }
 
-  submitForm(e) {
+  submitForm(e) { 
     e.preventDefault();
     const { registerUser } = this.props;
     const { email, name, password } = this.state;

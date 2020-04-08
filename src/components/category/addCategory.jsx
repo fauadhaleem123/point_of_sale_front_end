@@ -132,14 +132,14 @@ export default class AddCategory extends Component {
       this.state.dropDownList.push(dropdown);
       this.setState({ state: this.state });
     }
-  };
+  }; 
 
   render() {
-    const { open, dimmer, categoryName, dropDownList, display } = this.state;
-
+    const { open, dimmer, categoryName, dropDownList, display } = this.state; 
+ 
     return (
       <div className="category">
-        <Button id="addcategory" onClick={this.show("blurring")} primary>
+        <Button id="addcategory" size="tiny" onClick={this.show("blurring")} primary>
           Add category
         </Button>
         <Modal className="cat-modal" dimmer={dimmer} open={open} onClose={this.close}>

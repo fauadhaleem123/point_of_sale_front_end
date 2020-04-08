@@ -179,7 +179,6 @@ export default class AddItem extends Component {
   };
 
   handleSizeChangeSearch = (value, index) => {
-    console.log(this.state.item_sizes_attributes, " :this.state.item_sizes_attributes")
 
     const item_sizes_attributes = [...this.state.item_sizes_attributes];
     const size_attributes = {
@@ -296,7 +295,6 @@ export default class AddItem extends Component {
         })
         .then(res => {
           comingFromAdd ? this.props.addItem() : this.props.editItem()
-          console.log(res, "  res")
         })
         .catch(error => console.log(error));
 
@@ -307,7 +305,7 @@ export default class AddItem extends Component {
         this.setState({ display: false });
       }, 5000);
     }
-  };
+  }; 
  
   updateCategoryOptions = (value, beforeEdit, beforeAdd) => {
     
@@ -483,12 +481,12 @@ export default class AddItem extends Component {
     
     return (
       <React.Fragment>
-        {itemData && (
+        {itemData && ( 
           <Button color="green" icon="edit" onClick={() => this.show("edit")} />
         )}
         <div className="item">
           {!itemData && (
-            <Button id="addItem" onClick={() => this.show("add")} primary>
+            <Button id="addItem" size="tiny" onClick={() => this.show("add")} primary >
               Add item
             </Button>
           )}

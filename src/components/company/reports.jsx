@@ -22,7 +22,7 @@ import DatePicker from "react-datepicker";
 import jsPDF from "jspdf";
 import "jspdf-autotable";
 import "react-datepicker/dist/react-datepicker.css";
-
+ 
 const dateOptions = {
   year: "numeric",
   month: "long",
@@ -135,7 +135,7 @@ class Reports extends Component {
     let salesContent = [];
     const marginLeft = 40;
     const doc = new jsPDF(orientation, unit, size);
-    doc.setFontSize(15);
+    doc.setFontSize(15); 
 
     if (this.state.printData.invoices) {
 
@@ -209,7 +209,7 @@ class Reports extends Component {
     doc.text(title, marginLeft, 40);
     doc.autoTable(content);
     doc.save("sales_report.pdf");
-  };
+  }; 
 
   handlePaginationChange = (e, { activePage }) => {
     const params = { ...this.state.params };

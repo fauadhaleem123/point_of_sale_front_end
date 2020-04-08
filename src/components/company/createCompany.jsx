@@ -30,7 +30,7 @@ class CreateCompany extends Component {
       } else if (!/^(\d|\w)+$/.test(value)) {
         this.setState({ subdomain: "" });
       }
-    }
+    } 
     this.setState({
       [name]: value
     });
@@ -38,7 +38,7 @@ class CreateCompany extends Component {
 
   uploadImage = url => {
     this.setState({ logo: url });
-  };
+  }; 
 
   createCompany = () => {
     const { name, subdomain, about_you, logo } = this.state;

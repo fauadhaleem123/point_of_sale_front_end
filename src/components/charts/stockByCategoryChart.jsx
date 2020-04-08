@@ -3,12 +3,13 @@ import Chart from "react-apexcharts";
 import { apiUrl } from "../../utils/api-config";
 import http from "../../services/httpService";
 import { cahrtColors } from "../../utils/chartsData";
+
 class StockByCategoryChart extends Component {
   state = {
     options: {
       legend: {
         position: "right",
-        fontSize: "16px"
+        fontSize: this.props.width ? "8px" : "20px"
       },
       plotOptions: {
         pie: {
@@ -17,7 +18,14 @@ class StockByCategoryChart extends Component {
               show: true,
               total: {
                 show: true,
-                label: "Total"
+                label: "Total",
+                fontSize: this.props.width ? "8px" : "20px",
+                offsetY: 10
+              },
+              value : {
+                show: true,
+                fontSize: this.props.width ? "8px" : "20px",
+                offsetY: -2
               }
             }
           }
@@ -36,16 +44,76 @@ class StockByCategoryChart extends Component {
     series: []
   };
 
-  componentDidMount() {
+  getFirstPageItems = () => {    
     http
-      .get(`${apiUrl}/api/v1/items?stock_by_category=true`)
-      .then(({ data }) => {
-        const options = { ...this.state.options };
-        const values = data.results.map(({ total }) => parseFloat(total));
-        options.labels = data.results.map(({ name }) => name);
-        this.setState({ options, series: values });
+      .get(`${apiUrl}/api/v1/items`, { params: { page: 1 } })
+      .then(res => {
+
+        this.setState({ allItems: { items: [...res.data.items], page: res.data.page, totalPages: res.data.pages } }, () => this.getAllItems(2) )
       })
-      .catch(error => console.log(error));
+      .catch(error => console.log("Error: ", error));
+  }
+
+  getAllItems = async (page) => {
+    
+    let response;
+
+    let allPages = this.state.allItems.totalPages
+
+    while ( page < allPages ) {
+
+      response = await http.get(`${apiUrl}/api/v1/items`, { params: { page } })
+    
+      page = page+1;
+      this.setState({ allItems: { items: [ ...this.state.allItems.items , ...response.data.items] } } )
+    }
+    response = await http.get(`${apiUrl}/api/v1/items`, { params: { page } })
+    this.setState({ allItems: { items: [ ...this.state.allItems.items , ...response.data.items] } }, () => this.mapCategoryName() )
+  }
+
+  mapCategoryName = async () => {
+    let response;
+    let categoryNames = [];
+
+    response = await http.get(`${apiUrl}/api/v1/categories`)
+    categoryNames = response.data.map( category => category.name)
+    this.setState({categoryNames, categories: response.data}, () => this.setGraph())
+  }
+
+  setGraph = () => {
+    let i;
+    let total;
+    let categoryQuantity = []
+    for ( i = 0 ;i < this.state.categoryNames.length; i++) {
+      total = 0;
+      this.state.allItems.items.map( item => { 
+        
+        if (this.state.categoryNames[i] === item.category) {
+          
+          item.item_sizes_attributes.forEach(item_size => {
+            total = total + item_size.quantity
+          })
+        }
+        this.state.categories[i].children.forEach( child => {
+          if (child.name === item.category) {
+            item.item_sizes_attributes.forEach(item_size => {
+              total = total + item_size.quantity
+            })
+          }
+        })
+      });
+      categoryQuantity.push(total)
+    }
+    const options = {}
+    options.labels = this.state.categoryNames.map(name => name);
+    this.setState({ options, series: categoryQuantity })
+  }
+
+
+
+  componentDidMount() {
+    
+    this.getFirstPageItems()
   }
   render() {
     return (
@@ -58,5 +126,5 @@ class StockByCategoryChart extends Component {
     );
   }
 }
-
+ 
 export default StockByCategoryChart;

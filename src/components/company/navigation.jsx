@@ -57,8 +57,23 @@ class Navigation extends Component {
   constructor(props) {
     super(props);
     this.state = {
-      expanded: false
+      expanded: false,
+      width: 0,
+      height: 0
     };
+  }
+
+  componentDidMount() {
+    this.updateWindowDimensions();
+    window.addEventListener('resize', this.updateWindowDimensions);
+  }
+  
+  componentWillUnmount() {
+    window.removeEventListener('resize', this.updateWindowDimensions);
+  }
+  
+  updateWindowDimensions = () => {
+    this.setState({ width: window.innerWidth, height: window.innerHeight });
   }
 
   signOut = e => {
@@ -95,7 +110,7 @@ class Navigation extends Component {
                     }}
                     className={this.state.expanded ? "sidebar-width" : null}
                   >
-                    <SideNav.Toggle />
+                    { this.state.width >= 1000 ? <SideNav.Toggle /> : null }
                     <NavHeader expanded={this.state.expanded}>
                       <NavTitle>Devsinc</NavTitle>
                     </NavHeader>

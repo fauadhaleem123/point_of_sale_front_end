@@ -6,7 +6,8 @@ class Paginate extends Component {
     this.state = {
       activePage: this.props.pageSet.activePage,
       totalPages: 0,
-      per_page: this.props.pageSet.per_page
+      per_page: this.props.pageSet.per_page,
+      siblingRange: 1
     };
   }
 
@@ -31,18 +32,31 @@ class Paginate extends Component {
 
   render() {
     this.state.activePage = this.props.pageSet.activePage;
+    let item = {
+      firstItem : null,
+      lastItem : null,
+      prevItem : null,
+      nextItem : null
+    };
+    if ( !this.props.width ) {
+      item = {
+        firstItem : { content: <Icon name="angle double left" />, icon: true },
+        lastItem : { content: <Icon name="angle double right" />, icon: true },
+        prevItem : { content: <Icon name="angle left" />, icon: true },
+        nextItem : { content: <Icon name="angle right" />, icon: true }
+      }
+    }
     return (
       <Pagination
-        boundaryRange={0}
-        activePage={this.state.activePage}
-        siblingRange={2}
-        disabled={this.state.totalPages < 2 ? true : false}
-        firstItem={{ content: <Icon name="angle double left" />, icon: true }}
-        lastItem={{ content: <Icon name="angle double right" />, icon: true }}
-        prevItem={{ content: <Icon name="angle left" />, icon: true }}
-        nextItem={{ content: <Icon name="angle right" />, icon: true }}
-        totalPages={this.state.totalPages}
-        onPageChange={this.handleActivePage}
+        activePage = { this.state.activePage }
+        disabled = { this.state.totalPages < 2 ? true : false }
+        siblingRange = {1}
+        firstItem = {item.firstItem}
+        lastItem = {item.lastItem}
+        prevItem = {item.prevItem}
+        nextItem = {item.nextItem}
+        totalPages = { this.state.totalPages }
+        onPageChange = { this.handleActivePage }
       />
     );
   }

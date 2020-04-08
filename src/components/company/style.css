@@ -1,0 +1,11 @@
+@media only screen and (max-width: 600px) {
+    .home_header {
+      font-size: 12px;
+    }
+    .divider {
+      font-size: 10px;
+    }
+    .chart_header {
+      font-size: 7px;
+    }
+  }

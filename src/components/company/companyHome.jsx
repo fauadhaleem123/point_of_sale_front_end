@@ -17,7 +17,7 @@ import { toast } from "react-toastify";
 import CreateCompany from "./createCompany";
 import SignOut from "../authentication/signOut";
 class CompanyHome extends Component {
-  state = {
+  state = {  
     companies: [],
     current_page: 1,
     total_pages: 2,
@@ -57,7 +57,7 @@ class CompanyHome extends Component {
     this.setState({
       [e.target.name]: e.target.value
     });
-  };
+  }; 
   confirmDelete = company => {
     if (this.state.confirmSub === company.subdomain) {
       const companies = [...this.state.companies];

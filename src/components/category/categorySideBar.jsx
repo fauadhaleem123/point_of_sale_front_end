@@ -89,7 +89,7 @@ l
   }
   gotoHome = () =>{
     this.props.gotoHome();
-  }
+  } 
 
   componentDidUpdate (prevProps) {
     if (prevProps.data !== this.props.data) {
@@ -99,9 +99,13 @@ l
    
   render() {
     const { data } = this.state
+    let style = {};
+    data.length > 0 ? style.marginTop = "6%" : style.marginTop = "20%"
+    this.props.width ? style.marginLeft = "50px" : style.marginTop = style.marginTop
+    this.props.width ? style.width = "100%" : style.marginTop = style.marginTop 
 
     return (
-      <div style={data.length>0?{ marginTop:"6%"}:{ marginTop:"20%"}}>
+      <div style={style}>
         <Table celled padded >
           <Table.Header>
             <Table.Row>

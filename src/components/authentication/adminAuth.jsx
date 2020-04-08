@@ -10,7 +10,7 @@ import {
 } from "semantic-ui-react";
 
 class AdminAuth extends Component {
-  render() {
+  render() { 
     return (
       <Container className="marginTop" textAlign="justified">
         <Grid centered columns={2}>

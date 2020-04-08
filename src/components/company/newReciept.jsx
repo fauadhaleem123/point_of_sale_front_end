@@ -2,11 +2,12 @@
 import React, { Component } from "react";
 import Select from "react-select";
 import http from "../../services/httpService";
-import { Input, Form, Button, Grid, Message, Container, Image, Header, Table, Icon } from "semantic-ui-react";
+import { Input, Form, Button, Grid, Message, Container, Image, Header, Table, Icon, GridColumn } from "semantic-ui-react";
 import { apiUrl } from "../../utils/api-config";
 import jsPDF from "jspdf";
 import "jspdf-autotable";
 import "react-datepicker/dist/react-datepicker.css";
+import "./style.css"
 
 const dateOptions = {
   year: "numeric",
@@ -43,15 +44,28 @@ class NewReciept extends Component {
       discount_value:0,
       draftCreated: false,
       invoice_drafts: [],
-      invoice_id: null
+      invoice_id: null,
+      width: 0,
+      height: 0
     };
   }
 
-  componentWillMount = () => {
+  componentWillUnmount = () => {
+    window.removeEventListener('resize', this.updateWindowDimensions);
+
+  }; 
+
+  componentDidMount = () => {
+    this.updateWindowDimensions();
+    window.addEventListener('resize', this.updateWindowDimensions);
     this.getData();
     this.getDrafts();
     this.getDiscounts();
-  };
+  }
+
+  updateWindowDimensions = () => {
+    this.setState({ width: window.innerWidth, height: window.innerHeight });
+  }
 
   getFirstPageItems = () => { 
     http
@@ -284,6 +298,7 @@ class NewReciept extends Component {
           <td>{total}</td>
           <td>
           <Button 
+            size="tiny"
             icon 
             labelPosition='right'
             onClick={() => {
@@ -293,8 +308,9 @@ class NewReciept extends Component {
               Use Draft
             <Icon name='check' />
           </Button>
+          </td>
+          <td>
           <Button
-            floated="right"
             icon="trash"
             className="remove-draft-btn"
             onClick={() => {
@@ -443,7 +459,6 @@ class NewReciept extends Component {
       
       return null;
     }
-
 
     if(e.target.innerHTML === "Pay Bill"){
       let new_selected_items = []
@@ -604,6 +619,10 @@ class NewReciept extends Component {
 
   render() {
     let itemList = [];
+
+    let margin = this.state.width < 1000 ? { marginLeft: "25px" } : {}
+    let marginUp = this.state.width < 1000 ? { marginLeft: "25px", marginTop: "10px" } : {}
+    let buttonMargin = this.state.width < 378  ? { marginTop: "5px"}: {}
     
     let x = this.state.data ? this.state.data.forEach (
       item => (
@@ -611,6 +630,7 @@ class NewReciept extends Component {
           itemList.push({
             value: item.name + " (" + item_sizes_attribute.size_attributes.size_type + ")",
             label: item.name + " (" + item_sizes_attribute.size_attributes.size_type + ")",
+            category: item.category,
             size: item_sizes_attribute.size_attributes.size_type,
             size_id: item_sizes_attribute.size_attributes.size_id,
             discount: item_sizes_attribute.discount,
@@ -624,21 +644,22 @@ class NewReciept extends Component {
       )
     ): null;
 
+ 
     return (
       <React.Fragment>
         <Container className="page-header">
           <Header as='h2' className="second-header" floated='right'>
-              Devsinc
+            <span className="home_header">Devsinc</span>
           </Header>
-          <Header as='h2' floated='left'>
+          <Header className="home_header" as='h2' floated='left'>
               <Image className="logo" src={require('../../images/company_icon.jpeg')} />
-              <span className="header-text">New Invoice</span>
+              <span  className="header-text home_header">New Invoice</span>
           </Header>
         </Container>
         <div className="ui divider"></div>   
         <Grid centered>
           <Grid.Row>
-            <Grid.Column width={6}>
+            <Grid.Column width={16} style={margin}>
               <Form error success>
                 <Form.Field
                   type="text"
@@ -697,7 +718,7 @@ class NewReciept extends Component {
                   onClick={this.populateSelectedItems}
                 />
               </Form>
-              <div className="drafts-container">
+              <div className="drafts-container" >
                 <h3 className="drafts-heading">Recent Invoice Drafts</h3>
                 <Table color={'teal'} key={'teal'}>
                   <Table.Header >
@@ -705,6 +726,7 @@ class NewReciept extends Component {
                       <Table.HeaderCell>Invoice ID</Table.HeaderCell>
                       <Table.HeaderCell>Total</Table.HeaderCell>
                       <Table.HeaderCell>Actions</Table.HeaderCell>
+                      <Table.HeaderCell/>
                     </Table.Row>
                   </Table.Header>
 
@@ -714,8 +736,10 @@ class NewReciept extends Component {
                 </Table>
               </div>
             </Grid.Column>
-            <Grid.Column width={10}>
-              <div>
+            <Grid.Column width={16} style={marginUp}>
+              <div className="drafts-container">
+              <h3 className="drafts-heading">Invoice</h3>
+
                 <table className="ui compact table">
                   <thead>
                     <tr>
@@ -794,13 +818,21 @@ class NewReciept extends Component {
                     content="Your invoice draft has been saved successfully!"
                   />
                 ) : null}
-                <Button primary className="submit-btn" onClick={this.createReciept}>
-                  Pay Bill
-                </Button>
-                
-                <Button color='teal' onClick={this.createReciept}>
-                  Save as draft
-                </Button>
+                { this.state.width < 1300 &&
+                <Grid.Row style={{marginLeft: "2px"}}>
+                  <Grid.Column width="2">
+                    <Button size="tiny"  primary className="submit-btn" onClick={this.createReciept}>
+                      Pay Bill
+                    </Button>
+                  </Grid.Column>
+                  
+                  <Grid.Column width="2">
+                  <Button size="tiny" style={buttonMargin}   color='teal' onClick={this.createReciept} >
+                    Save as draft
+                  </Button>
+                  </Grid.Column>
+                </Grid.Row>
+                }
               </div>
             </Grid.Column>
           </Grid.Row>

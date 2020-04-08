@@ -1,5 +1,5 @@
 import _ from "lodash";
-import React, { Component } from "react";
+import React, { Component, createRef } from "react";
 import {
   Table,
   Form,
@@ -9,7 +9,10 @@ import {
   Header,
   Container,
   Image,
-  Search 
+  Search,
+  Sticky ,
+  Ref,
+  Segment
 } from "semantic-ui-react"; 
 import AddItem from "./addItem";
 import http from "../../services/httpService";
@@ -19,6 +22,7 @@ import Paginate from "./pagination";
 import CategorySideBar from "../category/categorySideBar";
 import Barcode from "react-barcode";
 import Loader from "../Loader/loader";
+import "../company/style.css"
 
 const initialPagination = {
   activePage: 1,
@@ -29,6 +33,7 @@ const initialPagination = {
 const initialState = { isSearchLoading: false, results: [], value: '' }
 
 export default class Inventory extends Component {
+  contextRef = createRef()
   state = {
     ...initialPagination,
     open: false,
@@ -49,7 +54,11 @@ export default class Inventory extends Component {
       results: [],
       value: ""
     },
+    width: 0,
+    height: 0
   };
+
+
 
   close = () => {
     this.setState({
@@ -301,6 +310,8 @@ export default class Inventory extends Component {
   };
 
   componentDidMount() {
+    this.updateWindowDimensions();
+    window.addEventListener('resize', this.updateWindowDimensions);
     this.fetchCategoriesData();
     this.fetchSizes();
     this.setState({
@@ -312,6 +323,14 @@ export default class Inventory extends Component {
 
     const { per_page } = this.state;
     this.handlePagination(1, per_page);
+  }
+
+  updateWindowDimensions = () => {
+    this.setState({ width: window.innerWidth, height: window.innerHeight });
+  }
+
+  componentWillUnmount = () => {
+    window.removeEventListener('resize', this.updateWindowDimensions);
   }
 
   getFirstPageItems = () => {    
@@ -380,6 +399,7 @@ export default class Inventory extends Component {
 
 
   render() {
+    let bool = this.state.width < 1000 ? true : false
     const {
       column,
       isLoading,
@@ -394,18 +414,216 @@ export default class Inventory extends Component {
     } = this.state;
     const { isSearchLoading, value, results } = this.state.search;
 
-    return (
+    return ( 
       <div>
         <Container className="page-header">
           <Header as="h2" className="second-header" floated="right">
-            Devsinc
+            <span className="home_header">Devsinc</span>
           </Header>
           <Header as="h2" floated="left">
             <Image className="logo" src={require("../../images/logo.png")} />
-            <span className="header-text">Item Inventory</span>
+            <span className="header-text home_header">Item Inventory</span>
           </Header>
         </Container>
         <div className="ui divider"></div>
+        { this.state.width < 1000 &&
+          <Grid>
+          <Grid.Row>
+            <Grid.Column width={16} >
+              <CategorySideBar
+                width
+                gotoHome={this.gotoHome}
+                filterItems={this.filterItems}
+                filterCategory={this.filterByCategory}
+                data={newCategories}
+                headerClicked={this.allCategoriesClicked}
+              />
+            </Grid.Column>
+          </Grid.Row>
+          <div style={{ marginLeft: '50px', marginTop: "10px"}}>
+          <Grid.Row>
+            <Grid.Column width={16}>
+              <Form>
+                <Search
+                  loading={isSearchLoading}
+                  placeholder="Search Items"
+                  onResultSelect={this.handleResultSelect}
+                  onSearchChange={_.debounce(this.handleSearchChange, 500, {
+                    leading: true,
+                  })}
+                  results={results}
+                  value={value}
+                  {...this.props}
+                />
+              </Form>  
+            </Grid.Column>
+          </Grid.Row>
+          </div>
+          <div style={{ marginLeft: '50px', marginTop: "10px"}}>
+          <Grid.Row >
+            {apiResponse.length > 0 &&
+              
+              this.props.role === "read_and_write" ? (
+                <Grid.Column width={4}>
+                  <AddItem
+                    addItem={this.addItem}
+                    data={apiResponse}
+                    sizes={sizes}
+                    fetchSizes={this.fetchSizes}
+                    items={this.state.allItems? this.state.allItems.items: null}
+                  />
+                </Grid.Column>
+              ) : null}
+          </Grid.Row>
+          </div>
+          <div style={{ marginLeft: '50px', marginTop: "10px"}}>
+            <Grid.Row>
+          <Grid.Column>
+                {this.props.role === "read_and_write" && (
+                  <AddCategory
+                    addCategory={this.addCategory}
+                    data={apiResponse}
+                  />
+                )}
+              </Grid.Column>
+              </Grid.Row>
+          </div>
+          <div style={{ marginLeft: '50px', marginTop: "10px"}}>
+            <Grid.Row>
+            <Grid.Column width={16}>
+            <div style={{ width: "100%" }}>
+            <h3 className="drafts-heading">Items</h3>
+
+
+            <Table sortable celled fixed> 
+              <Table.Header>
+              <div>
+
+                <Table.Row>
+                  <Table.HeaderCell
+                    sorted={column === "name" ? direction : null}
+                    onClick={this.handleSort("name")}
+                  >
+                    Name
+                  </Table.HeaderCell>
+                  <Table.HeaderCell
+                    sorted={column === "quantity" ? direction : null}
+                    onClick={this.handleSort("quantity")}
+                  >
+                    Quantity
+                  </Table.HeaderCell>
+                  <Table.HeaderCell
+                    sorted={column === "size" ? direction : null}
+                    onClick={this.handleSort("size")}
+                  >
+                    Size
+                  </Table.HeaderCell>
+                  <Table.HeaderCell
+                    sorted={column === "code" ? direction : null}
+                    onClick={this.handleSort("code")}
+                  >
+                    QR Code
+                  </Table.HeaderCell>
+                  <Table.HeaderCell
+                    sorted={column === "category" ? direction : null}
+                    onClick={this.handleSort("category")}
+                  >
+                    Category
+                  </Table.HeaderCell>
+                  <Table.HeaderCell
+                    sorted={column === "price" ? direction : null}
+                    onClick={this.handleSort("price")}
+                  >
+                    Price
+                  </Table.HeaderCell>
+                  <Table.HeaderCell>Actions</Table.HeaderCell>
+                </Table.Row>
+                </div>
+              </Table.Header>
+
+              <Table.Body>
+                {!isLoading ? (
+                  data ? (data.map(item =>
+                    item.item_sizes_attributes.map(item_size => {
+                      return (
+                        <Table.Row key={item_size.code}>
+                          <Table.Cell>{item.name}</Table.Cell>
+                          <Table.Cell>{item_size.quantity}</Table.Cell>
+                          <Table.Cell>
+                            {item_size.size_attributes.size_type}
+                          </Table.Cell>
+                          <Table.Cell className="barcode">
+                            <Barcode value={item_size.code} />
+                          </Table.Cell>
+                          <Table.Cell>{item.category}</Table.Cell>
+                          <Table.Cell>{item_size.price}</Table.Cell>
+                          <Table.Cell>
+                            <Modal
+                              dimmer="inverted"
+                              trigger={
+                                <Button
+                                  basic
+                                  color="red"
+                                  icon="trash alternate outline"
+                                />
+                              }
+                              basic
+                              size="tiny"
+                              header={
+                                <Header
+                                  icon="trash alternate outline"
+                                  content="Are you Sure"
+                                />
+                              }
+                              actions={[
+                                {
+                                  key: "ok",
+                                  content: "Ok",
+                                  positive: true,
+                                  onClick: () => this.confirmDelete(item, item_size.size_attributes.size_id)
+                                }
+                              ]}
+                              onClose={this.close}
+                            />
+                            <AddItem
+                              itemData={item}
+                              editItem={this.editItem}
+                              data={apiResponse}
+                              sizes={sizes}
+                              fetchSizes={this.fetchSizes}
+                              check={true}
+                              items={this.state.allItems? this.state.allItems.items: null}
+                            />
+                          </Table.Cell>
+                        </Table.Row>
+                      );
+                    })
+                  )
+                ):null) : (
+                  <Loader />
+                )}
+              </Table.Body>
+            </Table>
+            </div>
+            </Grid.Column>
+            </Grid.Row>
+          </div>
+          <div style={{ marginLeft: '50px', marginTop: "10px"}}>
+            <Grid.Row>
+            {totalPages > 0 && !this.state.turnOffPagination ? (
+              <Paginate
+                handlePagination={this.handlePagination}
+                pageSet={{ activePage, totalPages, per_page, data }}
+                width
+              />
+            ) : (
+              totalPages <= 0 ? <h1 className="items-record">No Record Found</h1> : null
+            )}
+            </Grid.Row>
+          </div>
+          </Grid>
+        }  
+        { this.state.width >= 1000 && 
         <Grid>
           <Grid.Column width={4}>
             <CategorySideBar
@@ -416,7 +634,7 @@ export default class Inventory extends Component {
               headerClicked={this.allCategoriesClicked}
             />
           </Grid.Column>
-          <Grid.Column width={12}>
+          <Grid.Column width={10}>
             <Form>
               <Search
                 loading={isSearchLoading}
@@ -446,7 +664,7 @@ export default class Inventory extends Component {
                 />
               )}
             </Form>
-            <Table sortable celled fixed>
+            <Table sortable celled fixed> 
               <Table.Header>
                 <Table.Row>
                   <Table.HeaderCell
@@ -560,7 +778,7 @@ export default class Inventory extends Component {
               totalPages <= 0 ? <h1 className="items-record">No Record Found</h1> : null
             )}
           </Grid.Column>
-        </Grid>
+        </Grid>}
       </div>
     );
   }
