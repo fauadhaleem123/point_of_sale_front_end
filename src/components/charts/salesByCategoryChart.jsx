@@ -47,7 +47,7 @@ class SalesByCategoryChart extends Component {
   setGraph = () => {
     let i;
     let total;
-    let categoryQuantity = []
+    let categoryQuantity = [];
 
     for ( i = 0 ;i < this.state.categoryNames.length; i++) {
       total = 0;

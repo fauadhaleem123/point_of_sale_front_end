@@ -31,13 +31,16 @@ class Paginate extends Component {
   }
 
   render() {
+
     this.state.activePage = this.props.pageSet.activePage;
+
     let item = {
       firstItem : null,
       lastItem : null,
       prevItem : null,
       nextItem : null
     };
+
     if ( !this.props.width ) {
       item = {
         firstItem : { content: <Icon name="angle double left" />, icon: true },
@@ -46,6 +49,7 @@ class Paginate extends Component {
         nextItem : { content: <Icon name="angle right" />, icon: true }
       }
     }
+    
     return (
       <Pagination
         activePage = { this.state.activePage }

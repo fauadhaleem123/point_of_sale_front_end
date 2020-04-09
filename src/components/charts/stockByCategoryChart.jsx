@@ -104,17 +104,16 @@ class StockByCategoryChart extends Component {
       });
       categoryQuantity.push(total)
     }
+
     const options = {}
     options.labels = this.state.categoryNames.map(name => name);
     this.setState({ options, series: categoryQuantity })
   }
 
-
-
   componentDidMount() {
-    
     this.getFirstPageItems()
   }
+  
   render() {
     return (
       <Chart
